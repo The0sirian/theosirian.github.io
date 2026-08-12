@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Efteling – Wachttijden</title>
+<link rel="icon" type="image/png" href='favicon.png' />
+<link rel="shortcut icon" type="image/x-icon" href='favicon.png' />
+<link rel='apple-touch-icon' href='favicon.png'>
+<style>
+  :root {
+    --app-background: #eeeef6;
+    --card-background: #ffffff;
+    --text-color: #111218;
+    --text-color-muted: #111218;
+    --gold: #d4ab4d;
+    --green: #3f7a52;
+    --orange: #a8641c;
+    --red: #96392a;
+	--grey: #cccccc;
+    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html { color-scheme: light dark; }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --app-background: #111218;
+      --card-background: #1f2029;
+      --text-color: #f4ecd8;
+      --text-color-muted: #f4ecd8;
+      --gold: #d4ab4d;
+      --green: #5fa876;
+      --orange: #d68c3f;
+      --red: #d97a63;
+	  --grey: #6B6B6B;
+      --cover-bg: #111218;
+    }
+  }
+
+  body {
+    margin: 0;
+    background: var(--app-background);
+    color: var(--text-color);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  
+  .header {
+    background: var(--card-background);
+  }
+  
+  .header-inner {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 1.5rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+  }
+  
+  .titles { margin-right: auto; }
+  .titles h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.65rem;
+    color: var(--text-color);
+    letter-spacing: 0.01em;
+  }
+  .subtitle {
+    margin: 0.15rem 0 0;
+    font-size: 0.78rem;
+    color: var(--gold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-color-muted);
+  }
+  #refreshBtn {
+    background: var(--gold);
+    color: #faf3e2;
+    border: none;
+    border-radius: 7px;
+    padding: 0.4rem 0.85rem;
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+  }
+  #refreshBtn:hover { opacity: 0.88; }
+  #refreshBtn:disabled { opacity: 0.55; cursor: default; }
+  #refreshBtn:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+  
+  .page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 1.75rem 1.25rem 3rem;
+  }
+  
+  .error {
+    background: var(--card-background);
+    border: 1px solid #e6b8a9;
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.88rem;
+  }
+  .error[hidden] { display: none; }
+
+  .list {
+    background: var(--card-background);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  
+  .row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.68rem 1.25rem;
+    border-bottom: 1px solid var(--app-background);
+  }
+  .row:last-child { border-bottom: none; }
+  .row:hover { background: rgba(184, 145, 47, 0.07); }
+  
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transform: translateY(-2px);
+  }
+  .dot.open { background: var(--green); }
+  .dot.shut { background: var(--red); opacity: 0.75; }
+  
+  .name {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 62%;
+    flex-shrink: 0;
+  }
+  
+  .leader {
+    flex: 1 1 auto;
+    min-width: 0.75rem;
+    border-bottom: 2px dotted var(--leader);
+    margin-bottom: 0.4em;
+  }
+  .value {
+    flex-shrink: 0;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    min-width: 4.6rem;
+    text-align: right;
+    font-size: 0.92rem;
+  }
+  .value.low { color: var(--green); }
+  .value.medium { color: var(--orange); }
+  .value.high { color: var(--red); }
+  .value.none { color: var(--grey); font-weight: 600; }
+  .value.status {
+    color: var(--red) ;
+	opacity: 0.75;
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  
+  .empty {
+    padding: 2rem;
+    text-align: center;
+    color: var(--grey);
+  }
+  
+  
+</style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="titles">
+        <h1 id="parkName">Efteling</h1>
+        <p class="subtitle">Wachttijden</p>
+      </div>
+      <div class="meta">
+        <span id="lastUpdated">Bezig met laden…</span>
+        <button id="refreshBtn" type="button">Ververs nu</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="error" id="error" hidden role="alert"></div>
+    <div class="list" id="list">
+      <div class="empty">Bezig met laden…</div>
+    </div>
+  </main>
+
+  <script>
+  (() => {
+    const API_URL = 'https://api.themeparks.wiki/v1/entity/21776b5a-1444-4924-8ab2-6c66d9219628/live';
+    const REFRESH_MS = 60_000;
+
+    const els = {
+      parkName: document.getElementById('parkName'),
+      lastUpdated: document.getElementById('lastUpdated'),
+      list: document.getElementById('list'),
+      error: document.getElementById('error'),
+      refreshBtn: document.getElementById('refreshBtn'),
+    };
+
+    const STATUS_LABELS = {
+      OPERATING: 'Open',
+      CLOSED: 'Gesloten',
+      DOWN: 'Storing',
+      REFURBISHMENT: 'Onderhoud',
+    };
+    const statusLabel = (status) => STATUS_LABELS[status] || status;
+
+    const waitClass = (waitTime) => {
+      if (waitTime <= 20) return 'low';
+      if (waitTime <= 45) return 'medium';
+      return 'high';
+    };
+
+    const getWaitTime = (entity) => {
+      const wt = entity.queue?.STANDBY?.waitTime;
+      return typeof wt === 'number' ? wt : null;
+    };
+
+    const processEntities = (liveData) =>
+      liveData
+        .filter((e) => e.queue)
+        .map((e) => ({ id: e.id, name: e.name, status: e.status, waitTime: getWaitTime(e) }))
+        .sort((a, b) => {
+          if (a.waitTime === null && b.waitTime === null) return a.name.localeCompare(b.name, 'nl');
+          if (a.waitTime === null) return 1;
+          if (b.waitTime === null) return -1;
+          return b.waitTime - a.waitTime;
+        });
+
+    const render = (entities) => {
+      els.list.innerHTML = '';
+      if (entities.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.textContent = 'Geen attracties gevonden.';
+        els.list.appendChild(empty);
+        return;
+      }
+      for (const e of entities) {
+        const isOpen = e.status === 'OPERATING';
+        const row = document.createElement('div');
+        row.className = 'row';
+
+        const dot = document.createElement('span');
+        dot.className = `dot ${isOpen ? 'open' : 'shut'}`;
+        const dotLabel = document.createElement('span');
+        dotLabel.className = 'sr-only';
+        dotLabel.textContent = statusLabel(e.status);
+        dot.appendChild(dotLabel);
+
+        const name = document.createElement('span');
+        name.className = 'name';
+        name.textContent = e.name;
+        name.title = e.name;
+
+        const leader = document.createElement('span');
+        leader.className = 'leader';
+
+        const value = document.createElement('span');
+        if (!isOpen) {
+          value.className = 'value status';
+          value.textContent = statusLabel(e.status);
+        } else if (e.waitTime !== null) {
+          value.className = `value ${waitClass(e.waitTime)}`;
+          value.textContent = `${e.waitTime} min`;
+        } else {
+          value.className = 'value none';
+          value.textContent = 'geen rij';
+        }
+
+        row.append(dot, name, leader, value);
+        els.list.appendChild(row);
+      }
+    };
+
+    const showError = (message) => {
+      els.error.textContent = message;
+      els.error.hidden = false;
+    };
+    const clearError = () => {
+      els.error.hidden = true;
+      els.error.textContent = '';
+    };
+
+    const formatTime = (date) =>
+      date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    const fetchAndRender = async () => {
+      els.refreshBtn.disabled = true;
+      els.refreshBtn.textContent = 'Bezig…';
+      try {
+        const res = await fetch(API_URL, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`Serverfout: ${res.status}`);
+        const data = await res.json();
+        els.parkName.textContent = data.name || 'Efteling';
+        const entities = processEntities(data.liveData || []);
+        render(entities);
+        clearError();
+        els.lastUpdated.textContent = `laatste update ${formatTime(new Date())}`;
+      } catch (err) {
+        showError(`Kon gegevens niet ophalen: ${err?.message || err}`);
+      } finally {
+        els.refreshBtn.disabled = false;
+        els.refreshBtn.textContent = 'Ververs nu';
+      }
+    };
+
+    els.refreshBtn.addEventListener('click', fetchAndRender);
+
+    fetchAndRender();
+    setInterval(fetchAndRender, REFRESH_MS);
+  })();
+  </script>
+</body>
+</html>
